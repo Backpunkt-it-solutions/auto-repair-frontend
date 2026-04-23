@@ -20,10 +20,10 @@ export default function Header() {
     "Brake Pads stock is low",
   ];
 
-  const userName = auth?.user?.name || "Owner Admin";
-  const userEmail = auth?.user?.email || "owner@autofix.de";
-  const userRole = auth?.user?.role || "owner";
-  const companyName = auth?.company?.name || "Auto Reparatur Shop";
+  const userName = auth?.user?.name || "User";
+  const userEmail = auth?.user?.email || "";
+  const userRole = auth?.user?.role || "user";
+  const companyName = auth?.company?.name || "Company";
 
   const initials = userName
     .split(" ")
