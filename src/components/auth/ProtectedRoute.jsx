@@ -5,7 +5,7 @@ export default function ProtectedRoute({ children }) {
   const { isAuthenticated, authLoading } = useAuth();
 
   if (authLoading) {
-    return <div style={{ padding: 24 }}>Checking session...</div>;
+    return <div style={{minHeight: "100vh", display: "grid", placeItems: "center", padding: 24 }}>Checking session...</div>;
   }
 
   if (!isAuthenticated) {
