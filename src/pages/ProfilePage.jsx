@@ -328,7 +328,6 @@ export default function ProfilePage() {
               type="button"
               onClick={() => {
                 logout();
-                navigate("/login");
               }}
             >
               Logout

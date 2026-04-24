@@ -2,7 +2,7 @@ import axios from "axios";
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || "http://localhost:5007",
-  
+  //baseURL: "/"
 });
 //request interceptor
 api.interceptors.request.use((config) => {
@@ -34,7 +34,6 @@ api.interceptors.response.use((response) =>
 
      if(saved){
         console.warn("Session expired. Logging out...");
-        localStorage.removeItem("auth");
         window.location.href = "/login";
      }
     }

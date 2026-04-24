@@ -64,6 +64,9 @@ export const AuthProvider = ({ children }) => {
 
   const logout = () => {
     setAuth(null);
+    localStorage.removeItem("auth");
+
+    window.location.href = "/login"
   };
 
   const value = useMemo(

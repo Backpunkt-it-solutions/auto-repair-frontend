@@ -34,7 +34,6 @@ export default function Header() {
 
   const handleLogout = () => {
     logout();
-    navigate("/login");
   };
 
   const searchResults = useMemo(() => {
