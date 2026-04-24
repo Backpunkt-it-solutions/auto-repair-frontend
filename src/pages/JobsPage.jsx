@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useLoaderData, useSearchParams } from "react-router-dom";
 import PageHeader from "../components/common/PageHeader";
 import PageToolbar from "../components/common/PageToolbar";
 import StatCard from "../components/common/StatCard";
@@ -8,9 +8,15 @@ import ConfirmDeleteModal from "../components/common/ConfirmDeleteModal";
 import JobsKanban from "../components/jobs/JobsKanban";
 import JobForm from "../components/jobs/JobForm";
 import { useAppData } from "../context/AppDataContext";
+import { createJob, deleteJob, getJobs, updateJob } from "../api/jobApi";
+import Loader from "../components/common/Loader";
+import ErrorState from "../components/common/ErrorState";
+import EmptyState from "../components/common/EmptyState";
 
 export default function JobsPage() {
-  const { jobs, createJob, updateJob, deleteJob } = useAppData();
+  const [jobs, setJobs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("")
 
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
@@ -21,6 +27,33 @@ export default function JobsPage() {
 
   const highlightId = params.get("highlight");
 
+  // fetch jobs
+  const fetchJobs = async () => {
+    try {
+      setLoading(true);
+      setError("");
+
+      const data = await getJobs();
+      setJobs(data || [])
+    } catch (err) {
+      console.error(err);
+      if(err.response?.status === 404 ){
+        console.warn("Jobs API not ready yet")
+        setJobs([])
+      } else {
+        setError(err.response?.data?.message || "Failed to load jobs")
+      }
+            
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchJobs();
+  },[])
+
+  //filter
   const filtered = useMemo(() => {
     return jobs.filter((item) => {
       const matchesSearch = [
@@ -40,6 +73,7 @@ export default function JobsPage() {
     });
   }, [jobs, search, filter]);
 
+  //highlight
   useEffect(() => {
     if (!highlightId) return;
     const element = document.getElementById(`job-${highlightId}`);
@@ -47,6 +81,38 @@ export default function JobsPage() {
       element.scrollIntoView({ behavior: "smooth", block: "center" });
     }
   }, [highlightId, filtered]);
+
+  //create/update
+  const handleSubmit = async (payload) => {
+    try {
+      if (editing) {
+        await updateJob(editing._id,payload);
+      } else {
+        await createJob(payload);
+      }
+      await fetchJobs()
+      setShowForm(false)
+      setEditing(null)
+    } catch (err) {
+      setError(err.response?.data?.message || "Operation Failed" )
+    }
+  }
+
+  //delete
+  const handleDelete = async () => {
+    try {
+      await deleteJob(deleteTarget._id)
+      await fetchJobs();
+      setDeleteTarget(null)
+    } catch (err) {
+      setError(err.response?.data?.message || "Delete failed")
+    }
+  }
+
+  //loading
+  if(loading) {
+    return <Loader text="Loading jobs..."/>
+  }
 
   return (
     <div>
@@ -60,6 +126,8 @@ export default function JobsPage() {
           setShowForm(true);
         }}
       />
+
+      <ErrorState message={error}/>
 
       <div className="grid-4" style={{ marginBottom: 18 }}>
         <StatCard
@@ -97,18 +165,29 @@ export default function JobsPage() {
         ]}
       />
 
-      <JobsKanban
-        items={filtered.map((item) => ({
-          ...item,
-          _highlighted: highlightId === item.id,
-        }))}
-        onEdit={(item) => {
-          setEditing(item);
-          setShowForm(true);
-        }}
-        onDelete={(item) => setDeleteTarget(item)}
-        onStatusChange={(item, status) => updateJob(item.id, { status })}
-      />
+     {filtered.length === 0 ? (
+        <EmptyState message="No jobs found."/>
+      ) : (
+        <JobsKanban
+          items={filtered.map((item) => ({
+            ...item,
+            _highlighted: highlightId === item._id,
+          }))}
+          onEdit={(item) => {
+            setEditing(item);
+            setShowForm(true);
+          }}
+          onDelete={(item) => setDeleteTarget(item)}
+          onStatusChange={async (item, status) => {
+            try {
+              await updateJob(item._id, { status });
+              await fetchJobs();
+            } catch {
+              setError("Failed to update status");
+            }
+          }}
+        />
+      )}
 
       <Modal
         open={showForm}
@@ -117,15 +196,7 @@ export default function JobsPage() {
       >
         <JobForm
           initialData={editing}
-          onSubmit={(payload) => {
-            if (editing) {
-              updateJob(editing.id, payload);
-            } else {
-              createJob(payload);
-            }
-            setShowForm(false);
-            setEditing(null);
-          }}
+          onSubmit={handleSubmit}
         />
       </Modal>
 
@@ -134,7 +205,7 @@ export default function JobsPage() {
         onClose={() => setDeleteTarget(null)}
         title="Delete job"
         message={`Delete "${deleteTarget?.issue || "this job"}"?`}
-        onConfirm={() => deleteJob(deleteTarget.id)}
+        onConfirm={handleDelete}
       />
     </div>
   );
