@@ -2,6 +2,7 @@ import axios from "axios";
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || "http://localhost:5007",
+  
 });
 //request interceptor
 api.interceptors.request.use((config) => {
@@ -29,13 +30,14 @@ api.interceptors.response.use((response) =>
 
   (error) => {
     if(error.response?.status === 401) {
-      console.warn("Unautorized - logging out");
+     const saved = localStorage.getItem("auth");
 
-      localStorage.removeItem("auth");
-
-      window.location.href = "/login";
+     if(saved){
+        console.warn("Session expired. Logging out...");
+        localStorage.removeItem("auth");
+        window.location.href = "/login";
+     }
     }
-
     if(!error.response) {
       console.warn("Network/CORS error")
     }
