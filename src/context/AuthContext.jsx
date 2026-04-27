@@ -5,8 +5,13 @@ const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
   const [auth, setAuth] = useState(() => {
-    const saved = localStorage.getItem("auth");
-    return saved ? JSON.parse(saved) : null;
+    try{
+      const saved = localStorage.getItem("auth");
+      return saved ? JSON.parse(saved) : null;
+    } catch (error) {
+      return null;
+    }
+    
   });
 
   const [authLoading, setAuthLoading] = useState(true);
@@ -20,21 +25,24 @@ export const AuthProvider = ({ children }) => {
 
       try {
         const { data } = await api.get("/api/auth/me");
-
         setAuth((prev) => ({
           ...prev,
           user: data.user,
           company: data.company,
         }));
       } catch (error) {
-        setAuth(null);
+          if (error.response?.status === 401) {
+            setAuth(null); // only logout if token is invalid
+          }
+        // setAuth(null);
+        console.warn("Session check failed, keeping local auth");
       } finally {
         setAuthLoading(false);
       }
     };
 
     verifySession();
-  }, []);
+  }, [auth?.token]);
 
   useEffect(() => {
     if (auth) {
@@ -46,12 +54,19 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (formData) => {
     const { data } = await api.post("/api/auth/login", formData);
+
+    if(!data?.token) {
+      throw new Error("Invalid login response")
+    }
     setAuth(data);
     return data;
   };
 
   const logout = () => {
     setAuth(null);
+    localStorage.removeItem("auth");
+
+    window.location.href = "/login"
   };
 
   const value = useMemo(
@@ -65,7 +80,6 @@ export const AuthProvider = ({ children }) => {
     }),
     [auth, authLoading],
   );
-
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 

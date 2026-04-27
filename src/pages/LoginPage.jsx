@@ -7,9 +7,9 @@ export default function LoginPage() {
   const { login, isAuthenticated, authLoading } = useAuth();
 
   const [form, setForm] = useState({
-    slug: "autofix-duisburg",
-    email: "owner@autofix.de",
-    password: "123456",
+    slug: "",
+    email: "",
+    password: "",
   });
 
   const [loading, setLoading] = useState(false);
@@ -22,7 +22,7 @@ export default function LoginPage() {
   const handleChange = (e) => {
     setForm((prev) => ({
       ...prev,
-      [e.target.name]: e.target.value,
+      [e.target.name]: e.target.name === "slug" ? e.target.value.toLowerCase() : e.target.value,
     }));
   };
 
@@ -30,12 +30,23 @@ export default function LoginPage() {
     e.preventDefault();
     setError("");
 
+    const cleanedForm = {
+      slug: form.slug.trim(),
+      email: form.email.trim(),
+      password: form.password.trim()
+    }
+
+    if(!cleanedForm.slug || !cleanedForm.email || !cleanedForm.password){
+      setError("All fields are required");
+      return;
+    }
+
     try {
       setLoading(true);
-      await login(form);
+      await login(cleanedForm);
       navigate("/");
     } catch (err) {
-      setError(err.response?.data?.message || "Login failed");
+        setError(err.response?.data?.message || "Login failed");
     } finally {
       setLoading(false);
     }
@@ -118,7 +129,7 @@ export default function LoginPage() {
 
           {error ? <div style={styles.errorBox}>{error}</div> : null}
 
-          <button style={styles.button} type="submit" disabled={loading}>
+          <button style={styles.button} type="submit" disabled={loading|| !form.slug || !form.email || !form.password}>
             {loading ? "Signing in..." : "Login to Dashboard"}
           </button>
         </form>

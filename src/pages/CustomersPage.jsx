@@ -1,6 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import api from "../lib/api";
 import PageHeader from "../components/common/PageHeader";
+import { createCustomer, deleteCustomer, getCustomers } from "../api/customerApi";
+import Loader from "../components/common/Loader";
+import EmptyState from "../components/common/EmptyState";
+import ErrorState from "../components/common/ErrorState";
+
 
 const emptyForm = {
   name: "",
@@ -23,7 +28,7 @@ export default function CustomersPage() {
       setLoading(true);
       setError("");
 
-      const { data } = await api.get("/api/customers");
+      const  data  = await getCustomers();
       setCustomers(data);
     } catch (err) {
       setError(err.response?.data?.message || "Failed to load customers");
@@ -37,6 +42,8 @@ export default function CustomersPage() {
   }, []);
 
   const filteredCustomers = useMemo(() => {
+     if (!Array.isArray(customers)) return [];
+
     const q = search.trim().toLowerCase();
     if (!q) return customers;
 
@@ -47,6 +54,10 @@ export default function CustomersPage() {
         .includes(q),
     );
   }, [customers, search]);
+
+  console.log("customers:", customers);
+  console.log("filteredCustomers:", filteredCustomers);
+  console.log("search:", search);
 
   const handleChange = (e) => {
     setForm((prev) => ({
@@ -62,7 +73,7 @@ export default function CustomersPage() {
       setSaving(true);
       setError("");
 
-      await api.post("/api/customers", form);
+      await createCustomer(form);
       setForm(emptyForm);
       await fetchCustomers();
     } catch (err) {
@@ -77,7 +88,7 @@ export default function CustomersPage() {
     if (!confirmed) return;
 
     try {
-      await api.delete(`/api/customers/${id}`);
+      await deleteCustomer(id);
       await fetchCustomers();
     } catch (err) {
       setError(err.response?.data?.message || "Failed to delete customer");
@@ -90,6 +101,8 @@ export default function CustomersPage() {
         title="Customers"
         description="Manage your workshop customers with tenant-safe live API data."
       />
+
+      <ErrorState message={error}/>
 
       <div className="card" style={{ marginBottom: 18, padding: 18 }}>
         <form
@@ -152,28 +165,13 @@ export default function CustomersPage() {
             />
           </div>
         </form>
-
-        {error ? (
-          <div
-            style={{
-              marginTop: 12,
-              padding: 12,
-              borderRadius: 12,
-              background: "rgba(220,38,38,0.12)",
-              color: "#fecaca",
-              border: "1px solid rgba(248,113,113,0.2)",
-            }}
-          >
-            {error}
-          </div>
-        ) : null}
       </div>
 
       <div className="card" style={{ padding: 18 }}>
         {loading ? (
-          <div>Loading customers...</div>
-        ) : filteredCustomers.length === 0 ? (
-          <div className="empty-state">No customers found.</div>
+          <Loader text="Loading customers..."/>
+        ) : !filteredCustomers || filteredCustomers.length === 0? (
+          <EmptyState message="No customers found."/>
         ) : (
           <div className="mini-list">
             {filteredCustomers.map((customer) => (

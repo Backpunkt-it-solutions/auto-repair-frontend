@@ -6,6 +6,7 @@ import RevenueChart from "../components/dashboard/RevenueChart";
 import AppointmentsList from "../components/dashboard/AppointmentsList";
 import JobsOverview from "../components/dashboard/JobsOverview";
 import { stats } from "../data/mockData";
+import { useAuth } from "../context/AuthContext";
 
 export default function DashboardPage() {
   const navigate = useNavigate();
@@ -18,11 +19,13 @@ export default function DashboardPage() {
     navigate("/appointments");
   };
 
+  const { auth } = useAuth();
+
   return (
     <div>
       <PageHeader
-        title="Dashboard"
-        description="Monitor revenue, workshop activity, appointments, and repair operations in real time."
+        title={`Dashboard - ${auth?.company?.name}`}
+        description={`Welcome ${auth?.user?.name}. Monitor ${auth?.company?.name} workshop activity in real time.`}
         actionLabel="+ New Appointment"
         secondaryActionLabel="Generate Report"
         onAction={handleNewAppointment}

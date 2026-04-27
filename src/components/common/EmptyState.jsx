@@ -1,11 +1,19 @@
-export default function EmptyState({
-  title = "No data found",
-  description = "Nothing to show right now.",
-}) {
+export default function EmptyState({ message = "No data found." }) {
   return (
-    <div className="empty-state">
-      <h3>{title}</h3>
-      <p>{description}</p>
+    <div style={styles.wrapper}>
+      <div style={styles.text}>{message}</div>
     </div>
   );
 }
+
+const styles = {
+  wrapper: {
+    padding: "30px",
+    textAlign: "center",
+    color: "#64748b",
+  },
+  text: {
+    fontSize: "15px",
+    fontWeight: 500,
+  },
+};
